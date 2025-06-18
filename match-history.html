@@ -76,6 +76,7 @@
             const matchDate = matchData.dateTime?.toDate?.() || new Date(matchData.dateTime);
             const formattedDate = matchDate.toLocaleString().replace(/GMT.*/, "").trim();
 
+            // Get participants list
             const participantsCol = collection(db, "matches", matchId, "participants");
             const participantsSnapshot = await getDocs(participantsCol);
             let participantsHtml = "<ul class='list-disc list-inside max-h-40 overflow-auto text-gray-300'>";
@@ -85,9 +86,8 @@
             });
             participantsHtml += "</ul>";
 
+            // Screenshot URL value for this participant
             const currentScreenshot = pData.screenshotUrl || "";
-
-            const isUploaded = currentScreenshot !== "";
 
             html += `
               <div class="bg-gray-800 border border-gray-600 p-4 rounded-md">
@@ -102,7 +102,7 @@
                   ${participantsHtml}
                 </div>
 
-                <div id="screenshot-section-${matchId}" class="mt-4" style="${isUploaded ? 'display:none;' : ''}">
+                <div id="screenshot-section" class="mt-4">
                   <label for="screenshot-${matchId}" class="block text-gray-300 mb-1">Upload Match Screenshot URL:</label>
                   <input
                     type="url"
@@ -156,11 +156,6 @@
           timer: 2000,
           showConfirmButton: false,
         });
-
-        // Hide the screenshot upload section
-        const section = document.getElementById(`screenshot-section-${matchId}`);
-        if (section) section.style.display = "none";
-
       } catch (error) {
         console.error("Error uploading screenshot URL:", error);
         Swal.fire({
