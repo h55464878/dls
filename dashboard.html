@@ -131,7 +131,8 @@
           const participantRef = doc(db, "matches", matchId, "participants", currentUser.uid);
           const participantSnap = await getDoc(participantRef);
           if (participantSnap.exists()) {
-            joinButton = `<button disabled class="bg-blue-600 text-white font-semibold py-1.5 px-4 rounded cursor-not-allowed whitespace-nowrap">Joined</button>`;
+            // Button NOT disabled, clickable to show Swal info
+            joinButton = `<button onclick="alreadyJoinedAlert()" class="bg-blue-600 text-white font-semibold py-1.5 px-4 rounded cursor-pointer whitespace-nowrap">Joined</button>`;
           } else {
             joinButton = `<button onclick="showTeamInput('${matchId}', ${slot}, ${slotLimit}, ${match.entryFee || 0})" class="bg-yellow-400 text-black font-semibold py-1.5 px-4 rounded hover:bg-yellow-300 transition whitespace-nowrap">Join</button>`;
           }
@@ -178,6 +179,10 @@
       console.error("Error fetching matches:", error);
       matchListEl.innerHTML = "<p class='text-red-500'>Failed to load matches.</p>";
     }
+  }
+
+  function alreadyJoinedAlert() {
+    Swal.fire("Already Joined", "You have already joined this match.", "info");
   }
 
   function startCountdowns(timers) {
