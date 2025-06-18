@@ -1,4 +1,3 @@
-<!-- Full HTML with Screenshot View Button -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,6 +49,10 @@
         <div>
           <label class="block text-sm font-semibold">Slot Limit</label>
           <input id="editSlotLimit" type="number" class="w-full border p-2 rounded" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold">Date & Time</label>
+          <input id="editDateTime" type="datetime-local" class="w-full border p-2 rounded" />
         </div>
         <div class="flex justify-end space-x-3 pt-4">
           <button type="button" onclick="closeEditModal()" class="text-gray-600 hover:underline">Cancel</button>
@@ -244,6 +247,7 @@
       document.getElementById("editPerGoal").value = match.perGoal || 0;
       document.getElementById("editEntryFee").value = match.entryFee || 0;
       document.getElementById("editSlotLimit").value = match.slotLimit || 0;
+      document.getElementById("editDateTime").value = new Date(match.dateTime).toISOString().slice(0, 16);
 
       document.getElementById("editModal").classList.remove("hidden");
       document.getElementById("editModal").classList.add("flex");
@@ -263,6 +267,7 @@
           perGoal: Number(document.getElementById("editPerGoal").value),
           entryFee: Number(document.getElementById("editEntryFee").value),
           slotLimit: Number(document.getElementById("editSlotLimit").value),
+          dateTime: new Date(document.getElementById("editDateTime").value).toISOString(),
         });
         closeEditModal();
         await loadMatches();
