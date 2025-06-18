@@ -116,48 +116,53 @@
         const slot = match.slot || 0;
         const slotLimit = match.slotLimit || 0;
         const isFull = slot >= slotLimit;
-
         const fillRatio = slotLimit === 0 ? 0 : slot / slotLimit;
-        let progressColor = "bg-green-500";
-        if (fillRatio >= 0.75) progressColor = "bg-yellow-400";
-        else if (fillRatio >= 0.5) progressColor = "bg-yellow-400";
-
+        const matchCode = match.matchCode || "N/A";
         const countdownId = `countdown-${matchId}`;
+        const now = new Date();
+        const showMatchCode = (matchDate.getTime() - now.getTime()) <= 2 * 60 * 1000; // 2 mins before
+
+        let progressColor = "bg-green-500";
+        if (fillRatio >= 0.5) progressColor = "bg-yellow-400";
 
         html += `
          <div class="bg-gray-900 p-4 rounded-md border border-gray-700 space-y-2">
-        <h4 class="text-yellow-400 font-semibold text-lg">${match.title || "Untitled Match"}</h4>
-        <p class="text-gray-300 text-sm">Date & Time: ${formattedDate}</p>
-        <p class="text-gray-300 text-sm">Total Price: ৳${match.totalPrice || 'N/A'}</p>
-        <p class="text-gray-300 text-sm">Per Goal: ৳${match.perGoal != null ? match.perGoal : 'N/A'}</p>
-        <p class="text-gray-300 text-sm">Entry Fee: ৳${match.entryFee || 'N/A'}</p>
+          <h4 class="text-yellow-400 font-semibold text-lg">${match.title || "Untitled Match"}</h4>
+          <p class="text-gray-300 text-sm">Date & Time: ${formattedDate}</p>
+          <p class="text-gray-300 text-sm">Total Price: ৳${match.totalPrice || 'N/A'}</p>
+          <p class="text-gray-300 text-sm">Per Goal: ৳${match.perGoal != null ? match.perGoal : 'N/A'}</p>
+          <p class="text-gray-300 text-sm">Entry Fee: ৳${match.entryFee || 'N/A'}</p>
 
-        <div class="flex items-center gap-4 mt-2">
-          <div class="flex-1">
-            <div class="bg-green-100 rounded-full h-2 overflow-hidden">
-              <div class="${progressColor} h-full transition-all duration-300" style="width: ${(fillRatio * 100).toFixed(1)}%"></div>
+          <div class="flex items-center gap-4 mt-2">
+            <div class="flex-1">
+              <div class="bg-green-100 rounded-full h-2 overflow-hidden">
+                <div class="${progressColor} h-full transition-all duration-300" style="width: ${(fillRatio * 100).toFixed(1)}%"></div>
+              </div>
+              <p class="text-sm text-gray-300 font-semibold mt-1">Slot: ${slot} / ${slotLimit}</p>
             </div>
-            <p class="text-sm text-gray-300 font-semibold mt-1">Slot: ${slot} / ${slotLimit}</p>
+
+            <div class="flex items-center h-full">
+              ${
+                isFull
+                  ? `<button disabled class="bg-gray-700 text-white font-semibold py-1.5 px-4 rounded cursor-not-allowed whitespace-nowrap">Match Full</button>`
+                  : `<button onclick="showTeamInput('${matchId}', ${slot}, ${slotLimit}, ${match.entryFee || 0})" class="bg-yellow-400 text-black font-semibold py-1.5 px-4 rounded hover:bg-yellow-300 transition whitespace-nowrap">Join</button>`
+              }
+            </div>
           </div>
 
-          <div class="flex items-center h-full">
-            ${
-              isFull
-                ? `<button disabled class="bg-gray-700 text-white font-semibold py-1.5 px-4 rounded cursor-not-allowed whitespace-nowrap">Match Full</button>`
-                : `<button onclick="showTeamInput('${matchId}', ${slot}, ${slotLimit}, ${match.entryFee || 0})" class="bg-yellow-400 text-black font-semibold py-1.5 px-4 rounded hover:bg-yellow-300 transition whitespace-nowrap">Join</button>`
-            }
+          <div class="mt-2 flex gap-2">
+            <button onclick="showParticipants('${matchId}')" class="flex-1 bg-purple-700 hover:bg-purple-600 text-white font-semibold py-1.5 rounded transition">Participants</button>
+            <button ${showMatchCode ? "" : "disabled class='bg-gray-600 text-white font-semibold py-1.5 px-4 rounded cursor-not-allowed'"} 
+              onclick="${showMatchCode ? `showMatchCode('${matchId}', '${matchCode}')` : ""}" 
+              class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-1.5 rounded transition">
+              Match Code
+            </button>
+          </div>
+
+          <div class="mt-2 text-center text-sm text-gray-300 font-semibold">
+            Starts in: <span id="${countdownId}" class="text-yellow-400">Calculating...</span>
           </div>
         </div>
-
-        <div class="mt-2 flex gap-2">
-          <button onclick="showParticipants('${matchId}')" class="flex-1 bg-purple-700 hover:bg-purple-600 text-white font-semibold py-1.5 rounded transition">Participants</button>
-          <button onclick="showMatchCode('${matchId}', '${match.matchCode || 'N/A'}')" class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-1.5 rounded transition">Match Code</button>
-        </div>
-
-        <div class="mt-2 text-center text-sm text-gray-300 font-semibold">
-          Starts in: <span id="${countdownId}" class="text-yellow-400">Calculating...</span>
-        </div>
-      </div>
         `;
 
         timers.push({ id: countdownId, time: matchDate });
@@ -314,6 +319,18 @@
       return;
     }
 
+    const matchSnap = await getDoc(doc(db, "matches", matchId));
+    if (matchSnap.exists()) {
+      const matchData = matchSnap.data();
+      const matchTime = matchData.dateTime?.toDate?.() || new Date(matchData.dateTime);
+      const now = new Date();
+
+      if ((matchTime - now) > 2 * 60 * 1000) {
+        Swal.fire("Too Early", "Match code will be visible only 2 minutes before the match starts.", "info");
+        return;
+      }
+    }
+
     Swal.fire({
       title: `Match Code`,
       html: `<p class="text-yellow-400 font-bold text-lg">${matchCode}</p>`,
@@ -327,6 +344,7 @@
     window.location.href = "login.html";
   };
 </script>
+
 
 </body>
 </html>
