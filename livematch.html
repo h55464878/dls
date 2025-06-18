@@ -58,6 +58,25 @@
     </div>
   </div>
 
+  <!-- Screenshot Modal -->
+  <div id="screenshotModal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-60 p-4">
+    <div class="bg-white rounded-lg shadow-lg relative max-w-4xl w-full max-h-[90vh] flex flex-col">
+      <button
+        onclick="closeScreenshotModal()"
+        class="absolute top-2 right-2 text-gray-700 hover:text-gray-900 text-2xl font-bold px-3 py-1 rounded hover:bg-gray-200"
+        aria-label="Close Screenshot"
+      >&times;</button>
+      <iframe
+        id="screenshotFrame"
+        src=""
+        class="w-full flex-grow rounded-b-lg"
+        style="border:none;"
+        allowfullscreen
+        title="Screenshot Preview"
+      ></iframe>
+    </div>
+  </div>
+
   <!-- Firebase & Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -70,8 +89,7 @@
       projectId: "dlstournament-31ac1",
       storageBucket: "dlstournament-31ac1.appspot.com",
       messagingSenderId: "874377019055",
-      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a",
-      measurementId: "G-0DGFJEV6GL"
+      appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -82,11 +100,8 @@
     let matchesCache = {};
 
     onAuthStateChanged(auth, user => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
-        loadMatches();
-      }
+      if (!user) window.location.href = "login.html";
+      else loadMatches();
     });
 
     async function loadMatches() {
@@ -120,8 +135,17 @@
 
         matchesContainer.innerHTML = cardsHtml;
 
+        // Add click listeners for declare winner buttons
         document.querySelectorAll(".win-button").forEach(button => {
           button.addEventListener("click", declareWinner);
+        });
+
+        // Add click listeners for screenshot buttons
+        document.querySelectorAll(".view-screenshot-btn").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            const url = e.currentTarget.dataset.url;
+            openScreenshotModal(url);
+          });
         });
 
       } catch (error) {
@@ -136,12 +160,22 @@
       const winnerUid = match.winnerUid;
 
       const getStatus = (uid) => winnerUid === uid ? "🏆 Winner" : (winnerUid ? "❌ Lost" : "");
+
       const getButton = (uid, teamName) => {
         const disabled = winnerUid ? "disabled" : "";
         const text = winnerUid ? (winnerUid === uid ? "Winner Declared ✔️" : "Not Winner") : `Declare ${teamName} Winner`;
         const bg = winnerUid ? (winnerUid === uid ? "bg-green-500" : "bg-gray-400") : "bg-green-500 hover:bg-green-600";
 
         return `<button data-matchid="${id}" data-uid="${uid}" class="win-button mt-2 ${bg} text-white px-3 py-1 rounded transition text-sm" ${disabled}>${text}</button>`;
+      };
+
+      const getScreenshotBtn = (participant) => {
+        if (participant.screenshotUrl) {
+          return `<button data-url="${participant.screenshotUrl}" class="view-screenshot-btn mt-2 inline-block text-blue-600 hover:underline text-sm">
+                    🔗 View Screenshot
+                  </button>`;
+        }
+        return "";
       };
 
       return `
@@ -162,6 +196,7 @@
             <div class="text-xs text-gray-400 break-all mb-1">${team1.uid}</div>
             <div id="result-${id}-${team1.uid}" class="text-sm font-bold text-green-600">${getStatus(team1.uid)}</div>
             ${getButton(team1.uid, team1.teamName)}
+            ${getScreenshotBtn(team1)}
           </div>
 
           <span class="text-gray-500 font-bold">VS</span>
@@ -171,6 +206,7 @@
             <div class="text-xs text-gray-400 break-all mb-1">${team2.uid}</div>
             <div id="result-${id}-${team2.uid}" class="text-sm font-bold text-green-600">${getStatus(team2.uid)}</div>
             ${getButton(team2.uid, team2.teamName)}
+            ${getScreenshotBtn(team2)}
           </div>
         </div>
 
@@ -183,7 +219,7 @@
          <button onclick="finishMatch('${id}')" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded flex items-center gap-1 text-sm">
          <i class="fas fa-flag-checkered"></i> Finish Match
          </button>
-         </div>
+        </div>
       </div>`;
     }
 
@@ -217,7 +253,6 @@
         await updateDoc(doc(db, "users", winnerUid), { balance: increment(totalPrice) });
         await updateDoc(matchDocRef, { winnerUid });
         await loadMatches();
-
       } catch (error) {
         const statusDiv = document.getElementById(`status-${matchId}`);
         statusDiv.textContent = `Error: ${error.message}`;
@@ -265,6 +300,26 @@
         console.error(err);
       }
     });
+
+    // Screenshot modal open/close functions
+    function openScreenshotModal(url) {
+      const modal = document.getElementById("screenshotModal");
+      const iframe = document.getElementById("screenshotFrame");
+      iframe.src = url;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeScreenshotModal() {
+      const modal = document.getElementById("screenshotModal");
+      const iframe = document.getElementById("screenshotFrame");
+      iframe.src = ""; // Clear src to stop loading video if any
+      modal.classList.add("hidden");
+    }
+
+    window.openScreenshotModal = openScreenshotModal;
+    window.closeScreenshotModal = closeScreenshotModal;
   </script>
+
 </body>
 </html>
