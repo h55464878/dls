@@ -1,3 +1,4 @@
+<!-- Full HTML with Screenshot View Button -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -55,25 +56,6 @@
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Screenshot Modal -->
-  <div id="screenshotModal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-60 p-4">
-    <div class="bg-white rounded-lg shadow-lg relative max-w-4xl w-full max-h-[90vh] flex flex-col">
-      <button
-        onclick="closeScreenshotModal()"
-        class="absolute top-2 right-2 text-gray-700 hover:text-gray-900 text-2xl font-bold px-3 py-1 rounded hover:bg-gray-200"
-        aria-label="Close Screenshot"
-      >&times;</button>
-      <iframe
-        id="screenshotFrame"
-        src=""
-        class="w-full flex-grow rounded-b-lg"
-        style="border:none;"
-        allowfullscreen
-        title="Screenshot Preview"
-      ></iframe>
     </div>
   </div>
 
@@ -135,17 +117,8 @@
 
         matchesContainer.innerHTML = cardsHtml;
 
-        // Add click listeners for declare winner buttons
         document.querySelectorAll(".win-button").forEach(button => {
           button.addEventListener("click", declareWinner);
-        });
-
-        // Add click listeners for screenshot buttons
-        document.querySelectorAll(".view-screenshot-btn").forEach(btn => {
-          btn.addEventListener("click", (e) => {
-            const url = e.currentTarget.dataset.url;
-            openScreenshotModal(url);
-          });
         });
 
       } catch (error) {
@@ -171,9 +144,7 @@
 
       const getScreenshotBtn = (participant) => {
         if (participant.screenshotUrl) {
-          return `<button data-url="${participant.screenshotUrl}" class="view-screenshot-btn mt-2 inline-block text-blue-600 hover:underline text-sm">
-                    🔗 View Screenshot
-                  </button>`;
+          return `<a href="${participant.screenshotUrl}" target="_blank" class="mt-2 inline-block text-blue-600 hover:underline text-sm">🔗 View Screenshot</a>`;
         }
         return "";
       };
@@ -300,26 +271,6 @@
         console.error(err);
       }
     });
-
-    // Screenshot modal open/close functions
-    function openScreenshotModal(url) {
-      const modal = document.getElementById("screenshotModal");
-      const iframe = document.getElementById("screenshotFrame");
-      iframe.src = url;
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
-    }
-
-    function closeScreenshotModal() {
-      const modal = document.getElementById("screenshotModal");
-      const iframe = document.getElementById("screenshotFrame");
-      iframe.src = ""; // Clear src to stop loading video if any
-      modal.classList.add("hidden");
-    }
-
-    window.openScreenshotModal = openScreenshotModal;
-    window.closeScreenshotModal = closeScreenshotModal;
   </script>
-
 </body>
 </html>
