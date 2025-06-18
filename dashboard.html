@@ -151,7 +151,7 @@
 
         <div class="mt-2 flex gap-2">
           <button onclick="showParticipants('${matchId}')" class="flex-1 bg-purple-700 hover:bg-purple-600 text-white font-semibold py-1.5 rounded transition">Participants</button>
-          <button onclick="showMatchCode('${matchId}', '${match.matchCode || 'N/A'}')" class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-1.5 rounded transition">Match Code</button>
+          <button onclick="showMatchCode('${matchId}')" class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-1.5 rounded transition">Match Code</button>
         </div>
 
         <div class="mt-2 text-center text-sm text-gray-300 font-semibold">
@@ -302,10 +302,18 @@
     }
   };
 
-  window.showMatchCode = async (matchId, matchCode) => {
+  window.showMatchCode = async (matchId) => {
     if (!currentUser) return;
 
     const userId = currentUser.uid;
+    const matchRef = doc(db, "matches", matchId);
+    const matchSnap = await getDoc(matchRef);
+    if (!matchSnap.exists()) return;
+
+    const matchData = matchSnap.data();
+    const matchDate = matchData.dateTime?.toDate?.() || new Date(matchData.dateTime);
+    const timeDiff = matchDate.getTime() - Date.now();
+
     const participantRef = doc(db, "matches", matchId, "participants", userId);
     const participantSnap = await getDoc(participantRef);
 
@@ -314,9 +322,14 @@
       return;
     }
 
+    if (timeDiff > 2 * 60 * 1000) {
+      Swal.fire("Not Available Yet", "Match code will be available 2 minutes before start.", "info");
+      return;
+    }
+
     Swal.fire({
       title: `Match Code`,
-      html: `<p class="text-yellow-400 font-bold text-lg">${matchCode}</p>`,
+      html: `<p class="text-yellow-400 font-bold text-lg">${matchData.matchCode || "N/A"}</p>`,
       icon: "info",
       confirmButtonText: "Close"
     });
@@ -327,5 +340,6 @@
     window.location.href = "login.html";
   };
 </script>
+
 </body>
 </html>
