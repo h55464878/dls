@@ -87,6 +87,8 @@
 
             const currentScreenshot = pData.screenshotUrl || "";
 
+            const hideUploadSection = currentScreenshot ? 'hidden' : '';
+
             html += `
               <div class="bg-gray-800 border border-gray-600 p-4 rounded-md">
                 <h4 class="text-yellow-400 font-semibold text-lg">${matchData.title || "Untitled Match"}</h4>
@@ -100,7 +102,7 @@
                   ${participantsHtml}
                 </div>
 
-                <div id="screenshot-section-${matchId}" class="mt-4">
+                <div class="mt-4 screenshot-section ${hideUploadSection}" id="screenshot-section-${matchId}">
                   <label for="screenshot-${matchId}" class="block text-gray-300 mb-1">Upload Match Screenshot URL:</label>
                   <input
                     type="url"
@@ -132,7 +134,6 @@
 
     window.uploadScreenshot = async function(matchId) {
       const input = document.getElementById(`screenshot-${matchId}`);
-      const section = document.getElementById(`screenshot-section-${matchId}`);
       const url = input.value.trim();
 
       if (!url) {
@@ -148,6 +149,10 @@
         const participantRef = doc(db, "matches", matchId, "participants", currentUser.uid);
         await updateDoc(participantRef, { screenshotUrl: url });
 
+        // Hide the input section after successful upload
+        const section = document.getElementById(`screenshot-section-${matchId}`);
+        if (section) section.classList.add("hidden");
+
         Swal.fire({
           icon: 'success',
           title: 'Uploaded',
@@ -155,11 +160,6 @@
           timer: 2000,
           showConfirmButton: false,
         });
-
-        // Hide the screenshot upload section
-        if (section) {
-          section.style.display = 'none';
-        }
       } catch (error) {
         console.error("Error uploading screenshot URL:", error);
         Swal.fire({
