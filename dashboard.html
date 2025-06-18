@@ -116,14 +116,12 @@
         const slot = match.slot || 0;
         const slotLimit = match.slotLimit || 0;
         const isFull = slot >= slotLimit;
-        const fillRatio = slotLimit === 0 ? 0 : slot / slotLimit;
-        const matchCode = match.matchCode || "N/A";
-        const countdownId = `countdown-${matchId}`;
-        const now = new Date();
-        const showMatchCode = (matchDate.getTime() - now.getTime()) <= 2 * 60 * 1000; // 2 mins before
 
+        const fillRatio = slotLimit === 0 ? 0 : slot / slotLimit;
         let progressColor = "bg-green-500";
         if (fillRatio >= 0.5) progressColor = "bg-yellow-400";
+
+        const countdownId = `countdown-${matchId}`;
 
         html += `
          <div class="bg-gray-900 p-4 rounded-md border border-gray-700 space-y-2">
@@ -152,11 +150,7 @@
 
           <div class="mt-2 flex gap-2">
             <button onclick="showParticipants('${matchId}')" class="flex-1 bg-purple-700 hover:bg-purple-600 text-white font-semibold py-1.5 rounded transition">Participants</button>
-            <button ${showMatchCode ? "" : "disabled class='bg-gray-600 text-white font-semibold py-1.5 px-4 rounded cursor-not-allowed'"} 
-              onclick="${showMatchCode ? `showMatchCode('${matchId}', '${matchCode}')` : ""}" 
-              class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-1.5 rounded transition">
-              Match Code
-            </button>
+            <button onclick="showMatchCode('${matchId}', '${match.matchCode || 'N/A'}')" class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-1.5 rounded transition">Match Code</button>
           </div>
 
           <div class="mt-2 text-center text-sm text-gray-300 font-semibold">
@@ -312,23 +306,31 @@
 
     const userId = currentUser.uid;
     const participantRef = doc(db, "matches", matchId, "participants", userId);
-    const participantSnap = await getDoc(participantRef);
+    const matchRef = doc(db, "matches", matchId);
+
+    const [participantSnap, matchSnap] = await Promise.all([
+      getDoc(participantRef),
+      getDoc(matchRef)
+    ]);
 
     if (!participantSnap.exists()) {
       Swal.fire("Access Denied", "You need to join the match to see the match code.", "warning");
       return;
     }
 
-    const matchSnap = await getDoc(doc(db, "matches", matchId));
-    if (matchSnap.exists()) {
-      const matchData = matchSnap.data();
-      const matchTime = matchData.dateTime?.toDate?.() || new Date(matchData.dateTime);
-      const now = new Date();
+    if (!matchSnap.exists()) {
+      Swal.fire("Error", "Match data not found.", "error");
+      return;
+    }
 
-      if ((matchTime - now) > 2 * 60 * 1000) {
-        Swal.fire("Too Early", "Match code will be visible only 2 minutes before the match starts.", "info");
-        return;
-      }
+    const matchData = matchSnap.data();
+    const matchDate = matchData.dateTime?.toDate?.() || new Date(matchData.dateTime);
+    const now = new Date();
+    const timeDiff = matchDate.getTime() - now.getTime();
+
+    if (timeDiff > 2 * 60 * 1000) {
+      Swal.fire("Too Early", "Match code will be available 2 minutes before start time.", "info");
+      return;
     }
 
     Swal.fire({
@@ -344,7 +346,6 @@
     window.location.href = "login.html";
   };
 </script>
-
 
 </body>
 </html>
