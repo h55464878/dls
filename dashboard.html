@@ -12,16 +12,18 @@
     .swal2-timer-progress-bar { background: #facc15 !important; }
     .glow-yellow { box-shadow: 0 0 5px rgba(234, 179, 8, 0.5); }
     .user-icon-glow { box-shadow: 0 0 15px 4px rgba(175, 85, 247, 0.8); }
+
     .countdown-segment {
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       background: rgba(251, 191, 36, 0.15);
-      padding: 0.2rem 0.1rem;
+      padding: 0.2rem 0.2rem;
       border-radius: 0.35rem;
       box-shadow: 0 0 3px rgba(251, 191, 36, 0.25), inset 0 0 4px rgba(251, 191, 36, 0.3);
-      min-width: 40px;
+      min-width: 33px;
+      height: 33px;
     }
 
     .countdown-number {
@@ -29,6 +31,7 @@
       font-weight: 900;
       line-height: 1;
       color: #facc15;
+      padding-top: 1px;
       font-family: 'Audiowide', cursive;
     }
 
@@ -59,7 +62,7 @@
   </header>
 
   <!-- Main Content -->
-  <main class="px-3 space-y-10 max-w-md mx-auto w-full">
+  <main class="px-3 max-w-md mx-auto w-full">
     <p id="userName" class="text-lg font-semibold"></p>
     <a href="match-history.html" class="text-yellow-400 underline hover:text-yellow-300">View Match History</a>
 
@@ -79,7 +82,7 @@
     <!-- Match List -->
     <section>
       <h3 class="text-xl font-bold mb-3 border-b border-yellow-400 pb-1">Upcoming Matches</h3>
-      <div id="matchList" class="space-y-4"></div>
+      <div id="matchList"></div>
     </section>
   </main>
 
@@ -160,7 +163,7 @@
         timers.push({ id: `countdown-${matchId}`, time: matchDate });
 
         html += `
-          <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 rounded-lg card-glow border border-gray-500 space-y-4 relative overflow-hidden">
+          <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black px-4 py-2.5 rounded-lg card-glow border border-gray-500 space-y-3 relative overflow-hidden">
             <div class="flex justify-between items-center border-b border-yellow-500 pb-1">
               <div class="flex items-center gap-2">
                 <img src="dls.png" alt="DLS Logo" class="w-6 h-6 rounded-full border border-white shadow" />
