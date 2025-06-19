@@ -12,42 +12,38 @@
     .swal2-timer-progress-bar { background: #facc15 !important; }
     .glow-yellow { box-shadow: 0 0 5px rgba(234, 179, 8, 0.5); }
     .user-icon-glow { box-shadow: 0 0 15px 4px rgba(175, 85, 247, 0.8); }
-    /* Countdown Timer Style */
-    .countdown {
-      display: flex;
-      justify-content: center;
-      gap: 0.8rem;
-      font-family: 'Audiowide', monospace;
-      color: #facc15;
-      user-select: none;
-      margin-top: 1rem;
-      font-size: 0.5rem;
-    }
-   .countdown > div {
-      background: rgba(251, 191, 36, 0.15);
-      padding: 0.15rem 0.5rem;
-      border-radius: 0.4rem;
-      box-shadow: 0 0 3px rgba(251, 191, 36, 0.3), inset 0 0 3px rgba(251, 191, 36, 0.4);
-      min-width: 24px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: background-color 0.3s ease;
-    }
-   .countdown span:first-child {
-      font-size: 0.7rem;
-      font-weight: 900;
-      line-height: 1;
-      letter-spacing: 0.03em;
-    }
-   .countdown span:last-child {
-      font-size: 0.25rem;
-      font-weight: 700;
-      color: #fbbf24;
-      margin-top: 0.08rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
+    .countdown-segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(251, 191, 36, 0.15);
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.4rem;
+  box-shadow: 0 0 3px rgba(251, 191, 36, 0.3), inset 0 0 3px rgba(251, 191, 36, 0.4);
+  min-width: 24px;
+  transition: background-color 0.3s ease;
+}
+
+.countdown-segment:hover {
+  background-color: rgba(251, 191, 36, 0.3);
+}
+
+.countdown-number {
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  color: #facc15;
+}
+
+.countdown-label {
+  font-size: 0.25rem;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-top: 0.08rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
   </style>
 </head>
 <body class="bg-black text-white flex flex-col min-h-screen pb-16 relative">
@@ -265,10 +261,20 @@
         const seconds = Math.floor((distance / 1000) % 60);
 
         el.innerHTML = `
-          <div class="flex flex-col items-center"><span>${String(hours).padStart(2, "0")}</span><span class="text-xs">Hrs</span></div>
-          <div class="flex flex-col items-center"><span>${String(minutes).padStart(2, "0")}</span><span class="text-xs">Min</span></div>
-          <div class="flex flex-col items-center"><span>${String(seconds).padStart(2, "0")}</span><span class="text-xs">Sec</span></div>
-        `;
+  <div class="countdown-segment">
+    <span class="countdown-number">${String(hours).padStart(2, "0")}</span>
+    <span class="countdown-label">Hrs</span>
+  </div>
+  <div class="countdown-segment">
+    <span class="countdown-number">${String(minutes).padStart(2, "0")}</span>
+    <span class="countdown-label">Min</span>
+  </div>
+  <div class="countdown-segment">
+    <span class="countdown-number">${String(seconds).padStart(2, "0")}</span>
+    <span class="countdown-label">Sec</span>
+  </div>
+`;
+
       });
     }
     update();
