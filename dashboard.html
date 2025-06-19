@@ -13,7 +13,7 @@
     .glow-yellow { box-shadow: 0 0 5px rgba(234, 179, 8, 0.5); }
     .user-icon-glow { box-shadow: 0 0 15px 4px rgba(175, 85, 247, 0.8); }
     /* Countdown Timer Style */
-    #countdown {
+    .countdown {
       display: flex;
       justify-content: center;
       gap: 0.8rem;
@@ -23,7 +23,7 @@
       margin-top: 1rem;
       font-size: 0.5rem;
     }
-    #countdown > div {
+   .countdown > div {
       background: rgba(251, 191, 36, 0.15);
       padding: 0.15rem 0.5rem;
       border-radius: 0.4rem;
@@ -34,13 +34,13 @@
       align-items: center;
       transition: background-color 0.3s ease;
     }
-    #countdown span:first-child {
+   .countdown span:first-child {
       font-size: 0.7rem;
       font-weight: 900;
       line-height: 1;
       letter-spacing: 0.03em;
     }
-    #countdown span:last-child {
+   .countdown span:last-child {
       font-size: 0.25rem;
       font-weight: 700;
       color: #fbbf24;
@@ -219,7 +219,7 @@
             </div>
 
             <div id="countdown-${matchId}" class="flex justify-center gap-2 text-yellow-300 text-sm font-mono font-bold" aria-label="Match countdown timer" role="timer">
-              <div class="flex flex-col items-center">
+              <div class="countdown flex flex-col items-center">
                 <span>00</span><span class="text-xs">Days</span>
               </div>
               <div class="flex flex-col items-center">
