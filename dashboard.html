@@ -155,16 +155,13 @@
         let progressColor = "bg-green-500";
         if (fillRatio >= 0.5) progressColor = "bg-yellow-400";
 
-        // Fetch participants from Firestore subcollection "participants"
         const participantsCol = collection(db, "matches", matchId, "participants");
         const participantsSnapshot = await getDocs(participantsCol);
         const participants = participantsSnapshot.docs.map(p => p.data());
 
-        
         const team1 = participants[0] || { teamName: "Team 1", imageUrl: "images (1).jpeg" };
         const team2 = participants[1] || { teamName: "Team 2", imageUrl: "images (2).jpeg" };
 
-        // Use team image or fallback default image
         const team1Image = team1.imageUrl || "images (1).jpeg";
         const team2Image = team2.imageUrl || "images (2).jpeg";
 
@@ -177,20 +174,17 @@
                 <img src="dls.png" alt="DLS Logo" class="w-6 h-6 rounded-full border border-white shadow" />
                 <h4 class="text-sm font-extrabold text-yellow-300 tracking-wide">${match.title || "Untitled"}</h4>
               </div>
-                 <div id="countdown-${matchId}" class="flex justify-center gap-2 text-yellow-300 text-sm font-mono font-bold" aria-label="Match countdown timer" role="timer">
-              <div class="countdown flex flex-col items-center">
-                <span>00</span><span class="text-xs">Days</span>
+              <div id="countdown-${matchId}" class="flex justify-center gap-2 text-yellow-300 text-sm font-mono font-bold" aria-label="Match countdown timer" role="timer">
+                <div class="flex flex-col items-center">
+                  <span>00</span><span class="text-xs">Hrs</span>
+                </div>
+                <div class="flex flex-col items-center">
+                  <span>00</span><span class="text-xs">Min</span>
+                </div>
+                <div class="flex flex-col items-center">
+                  <span>00</span><span class="text-xs">Sec</span>
+                </div>
               </div>
-              <div class="flex flex-col items-center">
-                <span>00</span><span class="text-xs">Hrs</span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span>00</span><span class="text-xs">Min</span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span>00</span><span class="text-xs">Sec</span>
-              </div>
-            </div>
             </div>
 
             <div class="grid grid-cols-3 items-center text-center">
@@ -272,13 +266,11 @@
           return;
         }
 
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
         const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
         const minutes = Math.floor((distance / (1000 * 60)) % 60);
         const seconds = Math.floor((distance / 1000) % 60);
 
         el.innerHTML = `
-          <div class="flex flex-col items-center"><span>${String(days).padStart(2, "0")}</span><span class="text-xs">Days</span></div>
           <div class="flex flex-col items-center"><span>${String(hours).padStart(2, "0")}</span><span class="text-xs">Hrs</span></div>
           <div class="flex flex-col items-center"><span>${String(minutes).padStart(2, "0")}</span><span class="text-xs">Min</span></div>
           <div class="flex flex-col items-center"><span>${String(seconds).padStart(2, "0")}</span><span class="text-xs">Sec</span></div>
@@ -394,6 +386,6 @@
     await signOut(auth);
     window.location.href = "login.html";
   };
-   </script>
+    </script>
  </body>
 </html>
