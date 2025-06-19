@@ -177,9 +177,20 @@
                 <img src="dls.png" alt="DLS Logo" class="w-6 h-6 rounded-full border border-white shadow" />
                 <h4 class="text-sm font-extrabold text-yellow-300 tracking-wide">${match.title || "Untitled"}</h4>
               </div>
-              <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-ping-slow border border-white shadow-md">
-                LIVE
-              </span>
+                 <div id="countdown-${matchId}" class="flex justify-center gap-2 text-yellow-300 text-sm font-mono font-bold" aria-label="Match countdown timer" role="timer">
+              <div class="countdown flex flex-col items-center">
+                <span>00</span><span class="text-xs">Days</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span>00</span><span class="text-xs">Hrs</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span>00</span><span class="text-xs">Min</span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span>00</span><span class="text-xs">Sec</span>
+              </div>
+            </div>
             </div>
 
             <div class="grid grid-cols-3 items-center text-center">
@@ -215,21 +226,6 @@
               <div class="text-right flex flex-col items-center">
                 <p>Entry Fee</p>
                 <p class="text-yellow-300 font-extrabold text-center text-xl">৳${match.entryFee || 0}</p>
-              </div>
-            </div>
-
-            <div id="countdown-${matchId}" class="flex justify-center gap-2 text-yellow-300 text-sm font-mono font-bold" aria-label="Match countdown timer" role="timer">
-              <div class="countdown flex flex-col items-center">
-                <span>00</span><span class="text-xs">Days</span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span>00</span><span class="text-xs">Hrs</span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span>00</span><span class="text-xs">Min</span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span>00</span><span class="text-xs">Sec</span>
               </div>
             </div>
 
