@@ -160,9 +160,7 @@
         const participantsSnapshot = await getDocs(participantsCol);
         const participants = participantsSnapshot.docs.map(p => p.data());
 
-        // Assign teams dynamically from participants list
-        // For example, first participant is Team 1, second participant is Team 2
-        // If not enough participants, fallback to placeholders
+        
         const team1 = participants[0] || { teamName: "Team 1", imageUrl: "images (1).jpeg" };
         const team2 = participants[1] || { teamName: "Team 2", imageUrl: "images (2).jpeg" };
 
@@ -177,7 +175,7 @@
             <div class="flex justify-between items-center border-b border-yellow-500 pb-1">
               <div class="flex items-center gap-2">
                 <img src="dls.png" alt="DLS Logo" class="w-6 h-6 rounded-full border border-white shadow" />
-                <h4 class="text-lg font-extrabold text-yellow-300 tracking-wide">${match.title || "Untitled"}</h4>
+                <h4 class="text-md font-extrabold text-yellow-300 tracking-wide">${match.title || "Untitled"}</h4>
               </div>
               <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-ping-slow border border-white shadow-md">
                 LIVE
