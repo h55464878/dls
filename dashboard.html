@@ -56,275 +56,289 @@
   </main>
 
   
-   <!-- Firebase & Logic -->
-<script type="module">
-  // DLS Tournament Full Firebase JS Script with Updated Match Card UI and Countdown
+   <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, getDocs, updateDoc, increment, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, getDocs, updateDoc, increment, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
+    authDomain: "dlstournament-31ac1.firebaseapp.com",
+    projectId: "dlstournament-31ac1",
+    storageBucket: "dlstournament-31ac1.appspot.com",
+    messagingSenderId: "874377019055",
+    appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
+  };
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
-  authDomain: "dlstournament-31ac1.firebaseapp.com",
-  projectId: "dlstournament-31ac1",
-  storageBucket: "dlstournament-31ac1.appspot.com",
-  messagingSenderId: "874377019055",
-  appId: "1:874377019055:web:6e38db2ec7f0d541d2de5a"
-};
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  let currentUser = null;
+  let userBalance = 0;
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-let currentUser = null;
-let userBalance = 0;
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return window.location.href = "login.html";
+    currentUser = user;
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return window.location.href = "login.html";
-  currentUser = user;
-  const userDoc = await getDoc(doc(db, "users", user.uid));
-  if (userDoc.exists()) {
-    const data = userDoc.data();
-    userBalance = data.balance || 0;
-    document.getElementById("userName").innerText = data.username || "No username";
-    document.getElementById("mainBalance").innerText = `৳${userBalance.toFixed(2)}`;
-  }
-  fetchMatches();
-});
-
-async function fetchMatches() {
-  const matchListEl = document.getElementById("matchList");
-  matchListEl.innerHTML = "Loading matches...";
-  try {
-    const querySnapshot = await getDocs(collection(db, "matches"));
-    if (querySnapshot.empty) {
-      matchListEl.innerHTML = "<p class='text-gray-400'>No matches available.</p>";
-      return;
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      userBalance = data.balance || 0;
+      document.getElementById("userName").innerText = data.username || "No username";
+      document.getElementById("mainBalance").innerText = `৳${userBalance.toFixed(2)}`;
     }
-    let html = "";
-    let timers = [];
-    querySnapshot.forEach(docSnap => {
-      const match = docSnap.data();
-      const matchId = docSnap.id;
-      if (match.finished !== false) return;
-      const matchDate = match.dateTime?.toDate?.() || new Date(match.dateTime);
-      const formattedDate = matchDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
-      const formattedTime = matchDate.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true });
-      const slot = match.slot || 0;
-      const slotLimit = match.slotLimit || 0;
-      const isFull = slot >= slotLimit;
-      const fillRatio = slotLimit === 0 ? 0 : slot / slotLimit;
-      let progressColor = fillRatio >= 0.75 ? "bg-red-500" : fillRatio >= 0.5 ? "bg-yellow-400" : "bg-green-500";
-      const countdownId = `countdown-${matchId}`;
-      const team1 = match.team1 || { teamName: "Team 1", uid: "UID1" };
-      const team2 = match.team2 || { teamName: "Team 2", uid: "UID2" };
 
-      html += `
-      <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 rounded-lg card-glow border border-gray-500 space-y-4 relative overflow-hidden">
-        <div class="flex justify-between items-center border-b border-yellow-500 pb-1">
-          <div class="flex items-center gap-2">
-            <img src="dls.png" alt="DLS Logo" class="w-6 h-6 rounded-full border border-white shadow" />
-            <h4 class="text-lg font-extrabold text-yellow-300 tracking-wide">${match.title || "Untitled Match"}</h4>
-          </div>
-          <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-ping-slow border border-white shadow-md">LIVE</span>
-        </div>
+    fetchMatches();
+  });
 
-        <div class="grid grid-cols-3 items-center text-center">
-          <div class="flex flex-col items-center gap-1">
-            <img src="images (1).jpeg" alt="Team1" class="w-8 h-8 rounded-full border border-white shadow-md" />
-            <span class="text-xs font-bold">${team1.teamName}</span>
-            <p>${team1.uid}</p>
-          </div>
-          <span class="text-yellow-400 font-black text-lg">VS</span>
-          <div class="flex flex-col items-center gap-1">
-            <img src="images (2).jpeg" alt="Team2" class="w-8 h-8 rounded-full border border-white shadow-md" />
-            <span class="text-xs font-bold">${team2.teamName}</span>
-            <p>${team2.uid}</p>
-          </div>
-        </div>
+  async function fetchMatches() {
+    const matchListEl = document.getElementById("matchList");
+    matchListEl.innerHTML = "Loading matches...";
 
-        <div class="grid grid-cols-2 gap-3 text-sm text-gray-300 pt-2">
-          <div class="flex justify-between items-center">
-            <p>Date:</p>
-            <span class="text-yellow-300 font-medium">${formattedDate}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <p>Time:</p>
-            <span class="text-yellow-300 font-medium">${formattedTime}</span>
-          </div>
-        </div>
-
-        <div class="flex justify-between text-sm text-gray-200 uppercase font-semibold">
-          <div class="text-left flex flex-col items-center">
-            <p>Total Prize</p>
-            <p class="text-yellow-300 font-extrabold text-center text-xl">৳${match.totalPrice || 0}</p>
-          </div>
-          <div class="text-center flex flex-col items-center">
-            <p>Per Goal</p>
-            <p class="text-yellow-300 font-extrabold text-center text-xl">৳${match.perGoal || 0}</p>
-          </div>
-          <div class="text-right flex flex-col items-center">
-            <p>Entry Fee</p>
-            <p class="text-yellow-300 font-extrabold text-center text-xl">৳${match.entryFee || 0}</p>
-          </div>
-        </div>
-
-        <div id="${countdownId}" class="flex justify-center gap-2 text-yellow-300 text-sm font-mono font-bold" aria-label="Match countdown timer" role="timer">
-          <div class="flex flex-col items-center"><span class="days">00</span><span class="text-xs">Days</span></div>
-          <div class="flex flex-col items-center"><span class="hours">00</span><span class="text-xs">Hrs</span></div>
-          <div class="flex flex-col items-center"><span class="minutes">00</span><span class="text-xs">Min</span></div>
-          <div class="flex flex-col items-center"><span class="seconds">00</span><span class="text-xs">Sec</span></div>
-        </div>
-
-        <div class="flex items-center justify-between">
-          <div class="flex flex-col flex-grow mr-3">
-            <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-              <div class="${progressColor} h-full transition-all duration-300" style="width: ${(fillRatio * 100).toFixed(1)}%"></div>
-            </div>
-            <p class="text-yellow-400 font-semibold mt-1">Slot: ${slot} / ${slotLimit}</p>
-          </div>
-          <button onclick="showTeamInput('${matchId}', ${slot}, ${slotLimit}, ${match.entryFee || 0})" ${isFull ? 'disabled class="w-24 h-10 bg-gray-600 text-white font-extrabold rounded-lg shadow-lg cursor-not-allowed"' : 'class="w-24 h-10 bg-yellow-400 text-black font-extrabold rounded-lg shadow-lg hover:scale-105 transition transform duration-200"'}>Join</button>
-        </div>
-
-        <div class="flex justify-center gap-4 mt-4">
-          <button onclick="showParticipants('${matchId}')" class="bg-black border border-yellow-400 text-yellow-300 px-5 py-1.5 rounded-full hover:bg-yellow-400 hover:text-black font-semibold transition duration-200">Match Rules</button>
-          <button onclick="showMatchCode('${matchId}')" class="bg-black border border-yellow-400 text-yellow-300 px-5 py-1.5 rounded-full hover:bg-yellow-400 hover:text-black font-semibold transition duration-200">Match Code</button>
-        </div>
-      </div>
-      `;
-      timers.push({ id: countdownId, time: matchDate });
-    });
-    matchListEl.innerHTML = html;
-    startStyledCountdowns(timers);
-  } catch (error) {
-    console.error("Error fetching matches:", error);
-    matchListEl.innerHTML = "<p class='text-red-500'>Failed to load matches.</p>";
-  }
-}
-
-function startStyledCountdowns(timers) {
-  function update() {
-    const now = new Date().getTime();
-    timers.forEach(timer => {
-      const distance = new Date(timer.time).getTime() - now;
-      const el = document.getElementById(timer.id);
-      if (!el) return;
-      if (distance <= 0) {
-        el.innerHTML = "<span class='text-green-400'>Started</span>";
+    try {
+      const querySnapshot = await getDocs(collection(db, "matches"));
+      if (querySnapshot.empty) {
+        matchListEl.innerHTML = "<p class='text-gray-400'>No matches available.</p>";
         return;
       }
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      el.querySelector(".days").innerText = String(days).padStart(2, '0');
-      el.querySelector(".hours").innerText = String(hours).padStart(2, '0');
-      el.querySelector(".minutes").innerText = String(minutes).padStart(2, '0');
-      el.querySelector(".seconds").innerText = String(seconds).padStart(2, '0');
-    });
-  }
-  update();
-  setInterval(update, 1000);
-}
 
-window.showTeamInput = async (matchId, currentSlot, slotLimit, entryFee) => {
-  if (!currentUser) return;
-  const userId = currentUser.uid;
-  const participantRef = doc(db, "matches", matchId, "participants", userId);
-  const participantSnap = await getDoc(participantRef);
-  if (participantSnap.exists()) {
-    Swal.fire("Already Joined", "You have already joined this match.", "info");
-    return;
-  }
-  const { value: teamName } = await Swal.fire({
-    title: "Enter Team Name",
-    input: "text",
-    inputLabel: "Team Name",
-    inputPlaceholder: "Type your team name here",
-    confirmButtonText: "Join Match",
-    showCancelButton: true,
-    inputValidator: (value) => { if (!value) return "Team name is required!"; }
-  });
-  if (teamName) joinMatch(matchId, currentSlot, slotLimit, entryFee, teamName);
-};
+      let html = "";
+      let timers = [];
 
-async function joinMatch(matchId, currentSlot, slotLimit, entryFee, teamName) {
-  if (!currentUser) return;
-  const userId = currentUser.uid;
-  const participantRef = doc(db, "matches", matchId, "participants", userId);
-  const participantSnap = await getDoc(participantRef);
-  if (participantSnap.exists()) {
-    Swal.fire("Already Joined", "You have already joined this match.", "info");
-    return;
-  }
-  if (currentSlot >= slotLimit) {
-    Swal.fire("Slot Full", "Sorry, this match is already full.", "warning");
-    return;
-  }
-  if (userBalance < entryFee) {
-    Swal.fire("Insufficient Balance", "You don't have enough balance to join this match.", "error");
-    return;
-  }
-  try {
-    await updateDoc(doc(db, "users", userId), { balance: userBalance - entryFee });
-    await setDoc(participantRef, { joinedAt: new Date(), uid: userId, teamName: teamName });
-    await updateDoc(doc(db, "matches", matchId), { slot: increment(1) });
-    userBalance -= entryFee;
-    document.getElementById("mainBalance").innerText = `৳${userBalance.toFixed(2)}`;
-    Swal.fire("Joined!", "You have successfully joined the match.", "success");
-    fetchMatches();
-  } catch (error) {
-    console.error("Join match error:", error);
-    Swal.fire("Error", "Failed to join the match.", "error");
-  }
-}
+      querySnapshot.forEach(docSnap => {
+        const match = docSnap.data();
+        const matchId = docSnap.id;
 
-window.showParticipants = async (matchId) => {
-  try {
-    const participantsCol = collection(db, "matches", matchId, "participants");
-    const participantsSnapshot = await getDocs(participantsCol);
-    if (participantsSnapshot.empty) {
-      Swal.fire("No Participants", "No participants have joined this match yet.", "info");
+        if (match.finished !== false) return;
+
+        const matchDate = match.dateTime?.toDate?.() || new Date(match.dateTime);
+        const formattedDate = matchDate.toLocaleString().replace(/GMT.*/, "").trim();
+        const slot = match.slot || 0;
+        const slotLimit = match.slotLimit || 0;
+        const isFull = slot >= slotLimit;
+
+        const fillRatio = slotLimit === 0 ? 0 : slot / slotLimit;
+        let progressColor = "bg-green-500";
+        if (fillRatio >= 0.75) progressColor = "bg-yellow-400";
+        else if (fillRatio >= 0.5) progressColor = "bg-yellow-400";
+
+        const countdownId = `countdown-${matchId}`;
+
+        html += `
+         <div class="bg-gray-900 p-4 rounded-md border border-gray-700 space-y-2">
+        <h4 class="text-yellow-400 font-semibold text-lg">${match.title || "Untitled Match"}</h4>
+        <p class="text-gray-300 text-sm">Date & Time: ${formattedDate}</p>
+        <p class="text-gray-300 text-sm">Total Price: ৳${match.totalPrice || 'N/A'}</p>
+        <p class="text-gray-300 text-sm">Per Goal: ৳${match.perGoal != null ? match.perGoal : 'N/A'}</p>
+        <p class="text-gray-300 text-sm">Entry Fee: ৳${match.entryFee || 'N/A'}</p>
+
+        <div class="flex items-center gap-4 mt-2">
+          <div class="flex-1">
+            <div class="bg-green-100 rounded-full h-2 overflow-hidden">
+              <div class="${progressColor} h-full transition-all duration-300" style="width: ${(fillRatio * 100).toFixed(1)}%"></div>
+            </div>
+            <p class="text-sm text-gray-300 font-semibold mt-1">Slot: ${slot} / ${slotLimit}</p>
+          </div>
+
+          <div class="flex items-center h-full">
+            ${
+              isFull
+                ? `<button disabled class="bg-gray-700 text-white font-semibold py-1.5 px-4 rounded cursor-not-allowed whitespace-nowrap">Match Full</button>`
+                : `<button onclick="showTeamInput('${matchId}', ${slot}, ${slotLimit}, ${match.entryFee || 0})" class="bg-yellow-400 text-black font-semibold py-1.5 px-4 rounded hover:bg-yellow-300 transition whitespace-nowrap">Join</button>`
+            }
+          </div>
+        </div>
+
+        <div class="mt-2 flex gap-2">
+          <button onclick="showParticipants('${matchId}')" class="flex-1 bg-purple-700 hover:bg-purple-600 text-white font-semibold py-1.5 rounded transition">Participants</button>
+          <button onclick="showMatchCode('${matchId}')" class="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-1.5 rounded transition">Match Code</button>
+        </div>
+
+        <div class="mt-2 text-center text-sm text-gray-300 font-semibold">
+          Starts in: <span id="${countdownId}" class="text-yellow-400">Calculating...</span>
+        </div>
+      </div>
+        `;
+
+        timers.push({ id: countdownId, time: matchDate });
+      });
+
+      matchListEl.innerHTML = html || "<p class='text-gray-400'>No upcoming matches found.</p>";
+      startCountdowns(timers);
+    } catch (error) {
+      console.error("Error fetching matches:", error);
+      matchListEl.innerHTML = "<p class='text-red-500'>Failed to load matches.</p>";
+    }
+  }
+
+  function startCountdowns(timers) {
+    function update() {
+      const now = new Date().getTime();
+      timers.forEach(timer => {
+        const distance = new Date(timer.time).getTime() - now;
+        const el = document.getElementById(timer.id);
+        if (!el) return;
+
+        if (distance <= 0) {
+          el.innerText = "Started";
+          return;
+        }
+
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        el.innerText = `${hours}h ${minutes}m ${seconds}s`;
+      });
+    }
+    update();
+    setInterval(update, 1000);
+  }
+
+  window.showTeamInput = async (matchId, currentSlot, slotLimit, entryFee) => {
+    if (!currentUser) return;
+
+    const userId = currentUser.uid;
+    const participantRef = doc(db, "matches", matchId, "participants", userId);
+    const participantSnap = await getDoc(participantRef);
+
+    if (participantSnap.exists()) {
+      Swal.fire("Already Joined", "You have already joined this match.", "info");
       return;
     }
-    let participantsList = "";
-    participantsSnapshot.forEach(docSnap => {
-      const p = docSnap.data();
-      participantsList += `<li class="mb-1 font-semibold">${p.teamName || "No Name"}<br><span class="text-sm text-gray-400">UID: ${p.uid}</span></li>`;
+
+    const { value: teamName } = await Swal.fire({
+      title: "Enter Team Name",
+      input: "text",
+      inputLabel: "Team Name",
+      inputPlaceholder: "Type your team name here",
+      confirmButtonText: "Join Match",
+      showCancelButton: true,
+      inputValidator: (value) => {
+        if (!value) return "Team name is required!";
+      }
     });
-    Swal.fire({ title: `Participants (${participantsSnapshot.size})`, html: `<ul class="text-left max-h-60 overflow-auto">${participantsList}</ul>`, width: 400, confirmButtonText: "Close" });
-  } catch (error) {
-    console.error("Error fetching participants:", error);
-    Swal.fire("Error", "Could not load participants.", "error");
-  }
-};
 
-window.showMatchCode = async (matchId) => {
-  if (!currentUser) return;
-  const userId = currentUser.uid;
-  const matchRef = doc(db, "matches", matchId);
-  const matchSnap = await getDoc(matchRef);
-  if (!matchSnap.exists()) return;
-  const matchData = matchSnap.data();
-  const matchDate = matchData.dateTime?.toDate?.() || new Date(matchData.dateTime);
-  const timeDiff = matchDate.getTime() - Date.now();
-  const participantRef = doc(db, "matches", matchId, "participants", userId);
-  const participantSnap = await getDoc(participantRef);
-  if (!participantSnap.exists()) {
-    Swal.fire("Access Denied", "You need to join the match to see the match code.", "warning");
-    return;
-  }
-  if (timeDiff > 2 * 60 * 1000) {
-    Swal.fire("Not Available Yet", "Match code will be available 2 minutes before start.", "info");
-    return;
-  }
-  Swal.fire({ title: `Match Code`, html: `<p class="text-yellow-400 font-bold text-lg">${matchData.matchCode || "N/A"}</p>`, icon: "info", confirmButtonText: "Close" });
-};
+    if (teamName) {
+      joinMatch(matchId, currentSlot, slotLimit, entryFee, teamName);
+    }
+  };
 
-window.logout = async function () {
-  await signOut(auth);
-  window.location.href = "login.html";
-};
+  async function joinMatch(matchId, currentSlot, slotLimit, entryFee, teamName) {
+    if (!currentUser) return;
+
+    const userId = currentUser.uid;
+    const participantRef = doc(db, "matches", matchId, "participants", userId);
+    const participantSnap = await getDoc(participantRef);
+
+    if (participantSnap.exists()) {
+      Swal.fire("Already Joined", "You have already joined this match.", "info");
+      return;
+    }
+
+    if (currentSlot >= slotLimit) {
+      Swal.fire("Slot Full", "Sorry, this match is already full.", "warning");
+      return;
+    }
+
+    if (userBalance < entryFee) {
+      Swal.fire("Insufficient Balance", "You don't have enough balance to join this match.", "error");
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, "users", userId), {
+        balance: userBalance - entryFee
+      });
+
+      await setDoc(participantRef, {
+        joinedAt: new Date(),
+        uid: userId,
+        teamName: teamName
+      });
+
+      await updateDoc(doc(db, "matches", matchId), {
+        slot: increment(1)
+      });
+
+      userBalance -= entryFee;
+      document.getElementById("mainBalance").innerText = `৳${userBalance.toFixed(2)}`;
+
+      Swal.fire("Joined!", "You have successfully joined the match.", "success");
+      fetchMatches();
+    } catch (error) {
+      console.error("Join match error:", error);
+      Swal.fire("Error", "Failed to join the match.", "error");
+    }
+  }
+
+  window.showParticipants = async (matchId) => {
+    try {
+      const participantsCol = collection(db, "matches", matchId, "participants");
+      const participantsSnapshot = await getDocs(participantsCol);
+
+      if (participantsSnapshot.empty) {
+        Swal.fire("No Participants", "No participants have joined this match yet.", "info");
+        return;
+      }
+
+      let participantsList = "";
+      participantsSnapshot.forEach(docSnap => {
+        const p = docSnap.data();
+        participantsList += `<li class="mb-1 font-semibold">
+          ${p.teamName || "No Name"}<br>
+          <span class="text-sm text-gray-400">UID: ${p.uid}</span>
+        </li>`;
+      });
+
+      Swal.fire({
+        title: `Participants (${participantsSnapshot.size})`,
+        html: `<ul class="text-left max-h-60 overflow-auto">${participantsList}</ul>`,
+        width: 400,
+        confirmButtonText: "Close"
+      });
+    } catch (error) {
+      console.error("Error fetching participants:", error);
+      Swal.fire("Error", "Could not load participants.", "error");
+    }
+  };
+
+  window.showMatchCode = async (matchId) => {
+    if (!currentUser) return;
+
+    const userId = currentUser.uid;
+    const matchRef = doc(db, "matches", matchId);
+    const matchSnap = await getDoc(matchRef);
+    if (!matchSnap.exists()) return;
+
+    const matchData = matchSnap.data();
+    const matchDate = matchData.dateTime?.toDate?.() || new Date(matchData.dateTime);
+    const timeDiff = matchDate.getTime() - Date.now();
+
+    const participantRef = doc(db, "matches", matchId, "participants", userId);
+    const participantSnap = await getDoc(participantRef);
+
+    if (!participantSnap.exists()) {
+      Swal.fire("Access Denied", "You need to join the match to see the match code.", "warning");
+      return;
+    }
+
+    if (timeDiff > 2 * 60 * 1000) {
+      Swal.fire("Not Available Yet", "Match code will be available 2 minutes before start.", "info");
+      return;
+    }
+
+    Swal.fire({
+      title: `Match Code`,
+      html: `<p class="text-yellow-400 font-bold text-lg">${matchData.matchCode || "N/A"}</p>`,
+      icon: "info",
+      confirmButtonText: "Close"
+    });
+  };
+
+  window.logout = async function () {
+    await signOut(auth);
+    window.location.href = "login.html";
+  };
 </script>
 </body>
 </html>
