@@ -123,6 +123,13 @@
         const countdownId = `countdown-${matchId}`;
         timers.push({ id: countdownId, time: matchDate });
 
+        // Fetch participants
+        const participantsCol = collection(db, "matches", matchId, "participants");
+        const participantsSnap = await getDocs(participantsCol);
+        const participantNames = participantsSnap.docs.map(p => p.data().teamName || "Unknown");
+        const team1 = participantNames[0] || "Team 1";
+        const team2 = participantNames[1] || "Team 2";
+
         html += `
           <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 rounded-lg card-glow border border-gray-500 space-y-4 relative overflow-hidden">
             <div class="flex justify-between items-center border-b border-yellow-500 pb-1">
@@ -138,12 +145,12 @@
             <div class="grid grid-cols-3 items-center text-center">
               <div class="flex flex-col items-center gap-1">
                 <img src="images (1).jpeg" class="w-8 h-8 rounded-full border border-white shadow-md" />
-                <span class="text-xs font-bold">Team 1</span>
+                <span class="text-xs font-bold">${team1}</span>
               </div>
               <span class="text-yellow-400 font-black text-lg">VS</span>
               <div class="flex flex-col items-center gap-1">
                 <img src="images (2).jpeg" class="w-8 h-8 rounded-full border border-white shadow-md" />
-                <span class="text-xs font-bold">Team 2</span>
+                <span class="text-xs font-bold">${team2}</span>
               </div>
             </div>
 
@@ -246,112 +253,12 @@
     setInterval(update, 1000);
   }
 
-  window.showTeamInput = async (matchId, currentSlot, slotLimit, entryFee) => {
-    if (!currentUser) return;
-    const userId = currentUser.uid;
-    const participantRef = doc(db, "matches", matchId, "participants", userId);
-    const participantSnap = await getDoc(participantRef);
-
-    if (participantSnap.exists()) {
-      Swal.fire("Already Joined", "You have already joined this match.", "info");
-      return;
-    }
-
-    const { value: teamName } = await Swal.fire({
-      title: "Enter Team Name",
-      input: "text",
-      inputLabel: "Team Name",
-      inputPlaceholder: "Type your team name here",
-      confirmButtonText: "Join Match",
-      showCancelButton: true,
-      inputValidator: (value) => !value && "Team name is required!"
-    });
-
-    if (teamName) {
-      joinMatch(matchId, currentSlot, slotLimit, entryFee, teamName);
-    }
-  };
-
-  async function joinMatch(matchId, currentSlot, slotLimit, entryFee, teamName) {
-    if (!currentUser) return;
-
-    const userId = currentUser.uid;
-    const participantRef = doc(db, "matches", matchId, "participants", userId);
-    const participantSnap = await getDoc(participantRef);
-
-    if (participantSnap.exists()) {
-      Swal.fire("Already Joined", "You have already joined this match.", "info");
-      return;
-    }
-
-    if (currentSlot >= slotLimit) {
-      Swal.fire("Slot Full", "Sorry, this match is already full.", "warning");
-      return;
-    }
-
-    if (userBalance < entryFee) {
-      Swal.fire("Insufficient Balance", "You don't have enough balance to join this match.", "error");
-      return;
-    }
-
-    try {
-      await updateDoc(doc(db, "users", userId), { balance: userBalance - entryFee });
-      await setDoc(participantRef, {
-        joinedAt: new Date(),
-        uid: userId,
-        teamName: teamName
-      });
-      await updateDoc(doc(db, "matches", matchId), { slot: increment(1) });
-
-      userBalance -= entryFee;
-      document.getElementById("mainBalance").innerText = `৳${userBalance.toFixed(2)}`;
-
-      Swal.fire("Joined!", "You have successfully joined the match.", "success");
-      fetchMatches();
-    } catch (error) {
-      console.error("Join match error:", error);
-      Swal.fire("Error", "Failed to join the match.", "error");
-    }
-  }
-
-  window.showMatchCode = async (matchId) => {
-    if (!currentUser) return;
-
-    const userId = currentUser.uid;
-    const matchRef = doc(db, "matches", matchId);
-    const matchSnap = await getDoc(matchRef);
-    if (!matchSnap.exists()) return;
-
-    const matchData = matchSnap.data();
-    const matchDate = matchData.dateTime?.toDate?.() || new Date(matchData.dateTime);
-    const timeDiff = matchDate.getTime() - Date.now();
-
-    const participantRef = doc(db, "matches", matchId, "participants", userId);
-    const participantSnap = await getDoc(participantRef);
-
-    if (!participantSnap.exists()) {
-      Swal.fire("Access Denied", "You need to join the match to see the match code.", "warning");
-      return;
-    }
-
-    if (timeDiff > 2 * 60 * 1000) {
-      Swal.fire("Not Available Yet", "Match code will be available 2 minutes before start.", "info");
-      return;
-    }
-
-    Swal.fire({
-      title: `Match Code`,
-      html: `<p class="text-yellow-400 font-bold text-lg">${matchData.matchCode || "N/A"}</p>`,
-      icon: "info",
-      confirmButtonText: "Close"
-    });
-  };
-
   window.logout = async function () {
     await signOut(auth);
     window.location.href = "login.html";
   };
 </script>
+
 
 </body>
 </html>
