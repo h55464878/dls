@@ -91,10 +91,11 @@
     </section>
   </main>
 
-   <script type="module">
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, collection, getDocs, updateDoc, increment, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/+esm';
 
   const firebaseConfig = {
     apiKey: "AIzaSyDooTNeDHoWUU9nLxYxyBIhewydt7Xl_M0",
@@ -125,172 +126,6 @@
 
     fetchMatches();
   });
-
-  async function fetchMatches() {
-    const matchListEl = document.getElementById("matchList");
-    matchListEl.innerHTML = "Loading matches...";
-
-    try {
-      const querySnapshot = await getDocs(collection(db, "matches"));
-      if (querySnapshot.empty) {
-        matchListEl.innerHTML = "<p class='text-gray-400'>No matches available.</p>";
-        return;
-      }
-
-      let html = "";
-      let timers = [];
-
-      for (const docSnap of querySnapshot.docs) {
-        const match = docSnap.data();
-        const matchId = docSnap.id;
-
-        if (match.finished !== false) continue;
-
-        const matchDate = match.dateTime?.toDate?.() || new Date(match.dateTime);
-        const slot = match.slot || 0;
-        const slotLimit = match.slotLimit || 0;
-        const isFull = slot >= slotLimit;
-        const fillRatio = slotLimit === 0 ? 0 : slot / slotLimit;
-        let progressColor = "bg-green-500";
-        if (fillRatio >= 0.5) progressColor = "bg-yellow-400";
-
-        const countdownId = `countdown-${matchId}`;
-
-        // Participants list
-        const participantsCol = collection(db, "matches", matchId, "participants");
-        const participantsSnapshot = await getDocs(participantsCol);
-        let team1 = "Team 1", team2 = "Team 2";
-        if (!participantsSnapshot.empty) {
-          const teams = participantsSnapshot.docs.map(p => p.data().teamName).slice(0, 2);
-          if (teams[0]) team1 = teams[0];
-          if (teams[1]) team2 = teams[1];
-        }
-
-        html += `
-          <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 rounded-lg card-glow border border-gray-500 space-y-4 relative overflow-hidden">
-
-            <!-- Match Header -->
-            <div class="flex justify-between items-center border-b border-yellow-500 pb-1">
-              <div class="flex items-center gap-2">
-                <img src="dls.png" alt="DLS Logo" class="w-6 h-6 rounded-full border border-white shadow" />
-                <h4 class="text-lg font-extrabold text-yellow-300 tracking-wide">${match.title || "Untitled Match"}</h4>
-              </div>
-              <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-ping-slow border border-white shadow-md">LIVE</span>
-            </div>
-
-            <!-- Team Info -->
-            <div class="grid grid-cols-3 items-center text-center">
-              <div class="flex flex-col items-center gap-1">
-                <img src="images (1).jpeg" alt="Team1" class="w-8 h-8 rounded-full border border-white shadow-md" />
-                <span class="text-xs font-bold">${team1}</span>
-              </div>
-              <span class="text-yellow-400 font-black text-lg">VS</span>
-              <div class="flex flex-col items-center gap-1">
-                <img src="images (2).jpeg" alt="Team2" class="w-8 h-8 rounded-full border border-white shadow-md" />
-                <span class="text-xs font-bold">${team2}</span>
-              </div>
-            </div>
-
-            <!-- Match Details -->
-            <div class="grid grid-cols-2 gap-3 text-sm text-gray-300 pt-2">
-              <div class="flex justify-between items-center">
-                <p>Date:</p>
-                <span class="text-yellow-300 font-medium">${matchDate.toLocaleDateString()}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <p>Time:</p>
-                <span class="text-yellow-300 font-medium">${matchDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-            </div>
-
-            <!-- Prize Info -->
-            <div class="flex justify-between text-sm text-gray-200 uppercase font-semibold">
-              <div class="text-left flex flex-col items-center">
-                <p>Total Prize</p>
-                <p class="text-yellow-300 font-extrabold text-center text-xl">৳${match.totalPrice || '0'}</p>
-              </div>
-              <div class="text-center flex flex-col items-center">
-                <p>Per Goal</p>
-                <p class="text-yellow-300 font-extrabold text-center text-xl">৳${match.perGoal || '0'}</p>
-              </div>
-              <div class="text-right flex flex-col items-center">
-                <p>Entry Fee</p>
-                <p class="text-yellow-300 font-extrabold text-center text-xl">৳${match.entryFee || '0'}</p>
-              </div>
-            </div>
-
-            <!-- Countdown -->
-            <div id="${countdownId}" class="flex justify-center gap-2 text-yellow-300 text-sm font-mono font-bold">
-              <div class="flex flex-col items-center">
-                <span class="days">00</span><span class="text-xs">Days</span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span class="hours">00</span><span class="text-xs">Hrs</span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span class="minutes">00</span><span class="text-xs">Min</span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span class="seconds">00</span><span class="text-xs">Sec</span>
-              </div>
-            </div>
-
-            <!-- Join Button & Progress -->
-            <div class="flex items-center justify-between mt-2">
-              <div class="flex flex-col flex-grow mr-3">
-                <div class="bg-green-100 rounded-full h-2 overflow-hidden">
-                  <div class="${progressColor} h-full transition-all duration-300" style="width: ${(fillRatio * 100).toFixed(1)}%"></div>
-                </div>
-                <p class="text-yellow-400 font-semibold mt-1">Slot: ${slot} / ${slotLimit}</p>
-              </div>
-              ${
-                isFull
-                  ? `<button disabled class="w-24 h-10 bg-gray-700 text-white font-extrabold rounded-lg shadow cursor-not-allowed">Full</button>`
-                  : `<button onclick="showTeamInput('${matchId}', ${slot}, ${slotLimit}, ${match.entryFee || 0})" class="w-24 h-10 bg-yellow-400 text-black font-extrabold rounded-lg shadow-lg hover:scale-105 transition">Join</button>`
-              }
-            </div>
-
-            <!-- Rules & Code -->
-            <div class="flex justify-center gap-4 mt-4">
-              <button class="bg-black border border-yellow-400 text-yellow-300 px-5 py-1.5 rounded-full hover:bg-yellow-400 hover:text-black font-semibold transition duration-200">Match Rules</button>
-              <button onclick="showMatchCode('${matchId}')" class="bg-black border border-yellow-400 text-yellow-300 px-5 py-1.5 rounded-full hover:bg-yellow-400 hover:text-black font-semibold transition duration-200">Match Code</button>
-            </div>
-          </div>
-        `;
-
-        timers.push({ id: countdownId, time: matchDate });
-      }
-
-      matchListEl.innerHTML = html || "<p class='text-gray-400'>No upcoming matches found.</p>";
-      startCountdowns(timers);
-    } catch (error) {
-      console.error("Error fetching matches:", error);
-      matchListEl.innerHTML = "<p class='text-red-500'>Failed to load matches.</p>";
-    }
-  }
-
-  function startCountdowns(timers) {
-    function update() {
-      const now = new Date().getTime();
-      timers.forEach(timer => {
-        const el = document.getElementById(timer.id);
-        if (!el) return;
-
-        const timeLeft = new Date(timer.time).getTime() - now;
-        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-        el.querySelector(".days").innerText = String(days).padStart(2, "0");
-        el.querySelector(".hours").innerText = String(hours).padStart(2, "0");
-        el.querySelector(".minutes").innerText = String(minutes).padStart(2, "0");
-        el.querySelector(".seconds").innerText = String(seconds).padStart(2, "0");
-      });
-    }
-    update();
-    setInterval(update, 1000);
-  }
 
   window.showTeamInput = async (matchId, currentSlot, slotLimit, entryFee) => {
     if (!currentUser) return;
@@ -368,45 +203,8 @@
       Swal.fire("Error", "Failed to join the match.", "error");
     }
   }
-
-  window.showMatchCode = async (matchId) => {
-    if (!currentUser) return;
-
-    const userId = currentUser.uid;
-    const matchRef = doc(db, "matches", matchId);
-    const matchSnap = await getDoc(matchRef);
-    if (!matchSnap.exists()) return;
-
-    const matchData = matchSnap.data();
-    const matchDate = matchData.dateTime?.toDate?.() || new Date(matchData.dateTime);
-    const timeDiff = matchDate.getTime() - Date.now();
-
-    const participantRef = doc(db, "matches", matchId, "participants", userId);
-    const participantSnap = await getDoc(participantRef);
-
-    if (!participantSnap.exists()) {
-      Swal.fire("Access Denied", "You need to join the match to see the match code.", "warning");
-      return;
-    }
-
-    if (timeDiff > 2 * 60 * 1000) {
-      Swal.fire("Not Available Yet", "Match code will be available 2 minutes before start.", "info");
-      return;
-    }
-
-    Swal.fire({
-      title: `Match Code`,
-      html: `<p class="text-yellow-400 font-bold text-lg">${matchData.matchCode || "N/A"}</p>`,
-      icon: "info",
-      confirmButtonText: "Close"
-    });
-  };
-
-  window.logout = async function () {
-    await signOut(auth);
-    window.location.href = "login.html";
-  };
 </script>
+
 
 </body>
 </html>
