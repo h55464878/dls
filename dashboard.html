@@ -56,7 +56,7 @@
   </main>
 
   
-   <script type="module">
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, collection, getDocs, updateDoc, increment, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -160,8 +160,12 @@
               </div>
             </div>
 
-            <!-- Removed button -->
+            <!-- Removed Participants Button -->
             <p id="${participantsId}" class="text-sm text-purple-400 mt-2">${participantsList}</p>
+
+            <div class="mt-2">
+              <button onclick="showMatchCode('${matchId}')" class="w-full bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-1.5 rounded transition">Match Code</button>
+            </div>
 
             <div class="mt-2 text-center text-sm text-gray-300 font-semibold">
               Starts in: <span id="${countdownId}" class="text-yellow-400">Calculating...</span>
@@ -318,6 +322,7 @@
     window.location.href = "login.html";
   };
 </script>
+
 
 
 </body>
